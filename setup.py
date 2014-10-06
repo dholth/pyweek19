@@ -1,5 +1,3 @@
-import os.path, sys, codecs, re
-
 from setuptools import setup
 
 setup(name='inca-game',
@@ -15,7 +13,8 @@ setup(name='inca-game',
       packages=[
           'inca',
           ],
-      install_requires=['pysdl2-cffi', 'pytmx'],
+      install_requires=['pysdl2-cffi>=0.7.0',
+                        'pytmx>=3.19.5'],
       tests_require=['pytest'],
       include_package_data=True,
       zip_safe=False,
