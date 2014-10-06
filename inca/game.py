@@ -8,6 +8,8 @@ import sys
 import pkg_resources
 import textwrap
 
+import sdl
+
 def resource(name):
     """
     Return a resource_filename from within our package.
@@ -21,8 +23,7 @@ class Psych(object):
 sys.modules['pygame'] = 'not needed'
 sys.modules['pygame.transform'] = Psych
 
-import sdl
-import pytmx
+import inca.map
 
 WHITE = (0xff,0xff,0xff,0xff)
 BLACK = (0,0,0,0xff)
@@ -39,7 +40,7 @@ class Game(object):
     def __init__(self):
         pass
 
-    def run(self):
+    def init(self):
         sdl.init(sdl.INIT_EVERYTHING)
         sdl.image.init(sdl.image.INIT_PNG)
         sdl.ttf.init()
@@ -48,20 +49,34 @@ class Game(object):
                                        sdl.WINDOWPOS_UNDEFINED,
                                        sdl.WINDOWPOS_UNDEFINED,
                                        1280, 720,
-                                       sdl.WINDOW_SHOWN)
+                                       sdl.WINDOW_HIDDEN)
 
-        self.renderer = renderer = self.window.createRenderer(-1, 0)
+        self.renderer = self.window.createRenderer(-1, 0)
+
+    def run(self):
+        self.window.showWindow()
+
+        renderer = self.renderer
         renderer.renderSetLogicalSize(*self.size)
         renderer.setRenderDrawColor(*WHITE)
         renderer.renderClear()
         renderer.renderPresent()
 
-        self.title = Title(self)
-        self.title.show()
-        sdl.delay(500)
-        self.story = Story(self)
-        self.story.show(renderer)
-        sdl.delay(6000)
+        if True:
+            self.title = Title(self)
+            self.title.show()
+            sdl.delay(1000)
+
+            self.story = Story(self)
+            self.story.show(renderer)
+            sdl.delay(8000)
+
+        self.map = inca.map.Map(resource('levels/level_1.tmx'))
+        renderer.setRenderDrawColor(*BLACK)
+        renderer.renderClear()
+        self.map.render(renderer)
+        renderer.renderPresent()
+        sdl.delay(3000)
 
         self.quit()
 

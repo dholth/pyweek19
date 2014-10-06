@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="32" height="16" tilewidth="16" tileheight="16">
+ <tileset firstgid="1" name="simples_pimples" tilewidth="16" tileheight="16">
+  <image source="simples_pimples.png" trans="5a5268" width="800" height="1280"/>
+ </tileset>
+ <layer name="Scenery" width="32" height="16">
+  <data encoding="base64" compression="zlib">
+   eJxjYBh8IJETP5+W4C4jwwL62TbwoIidgaGYfeDsXwK0eykW+w2xxDkwbmB0A00dNQxBEh3zEDYwZYTaP5kTgo9xItijYBQMFgAA3e4L9w==
+  </data>
+ </layer>
+ <layer name="Tile Layer 1" width="32" height="16">
+  <data encoding="base64" compression="zlib">
+   eJxjYEAAXUYGhkQ6YwY0+ykBA20/OW6gtf2kyFPDfmQ7iHHjdTYE/kYl+4l1HwjromFapm9s9tMzf43aP/LsH8WjGB8GAEuWjv0=
+  </data>
+ </layer>
+ <layer name="Treasure" width="32" height="16">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2AU0Bq4cA20C0bBKBgFowAVAABuVQBP
+  </data>
+ </layer>
+ <objectgroup name="Object Layer 1" width="32" height="16">
+  <object name="Hero" type="Hero" gid="77" x="32" y="96"/>
+ </objectgroup>
+</map>

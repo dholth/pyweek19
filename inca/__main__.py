@@ -2,4 +2,6 @@
 Run with 'python -m inca'
 """
 import inca.game
-inca.game.Game().run()
+game = inca.game.Game()
+game.init()
+game.run()
