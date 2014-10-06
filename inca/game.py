@@ -6,6 +6,7 @@ Daniel Holth <dholth@fastmail.fm>, 2014
 
 import sys
 import pkg_resources
+import textwrap
 
 def resource(name):
     """
@@ -41,6 +42,7 @@ class Game(object):
     def run(self):
         sdl.init(sdl.INIT_EVERYTHING)
         sdl.image.init(sdl.image.INIT_PNG)
+        sdl.ttf.init()
 
         self.window = sdl.createWindow(self.title,
                                        sdl.WINDOWPOS_UNDEFINED,
@@ -56,6 +58,10 @@ class Game(object):
 
         self.title = Title(self)
         self.title.show()
+        sdl.delay(500)
+        self.story = Story(self)
+        self.story.show(renderer)
+        sdl.delay(6000)
 
         self.quit()
 
@@ -66,14 +72,13 @@ class Game(object):
         sdl.quit()
 
 
-class ImageSprite(object):
-    def __init__(self, renderer, name):
-        image = sdl.image.load(name)
-        self.w = image.w
-        self.h = image.h
-        self.image_tex = renderer.createTextureFromSurface(image)
+class CenteredSprite(object):
+    def __init__(self, renderer, surface):
+        self.w = surface.w
+        self.h = surface.h
+        self.image_tex = renderer.createTextureFromSurface(surface)
         self.renderer = renderer
-        image.freeSurface()
+        surface.freeSurface()
 
     def show(self, renderer):
         """
@@ -88,6 +93,42 @@ class ImageSprite(object):
 
     def destroy(self):
         self.image_tex.destroyTexture()
+
+
+class ImageSprite(CenteredSprite):
+    """CenteredSprite loaded from image filename rather than a surface."""
+    def __init__(self, renderer, name):
+        image = sdl.image.load(name)
+        super(ImageSprite, self).__init__(renderer, image)
+
+
+class Story(object):
+    """
+    Story? Who needs a story???
+    """
+
+    text = textwrap.dedent(
+        u"The year is 1532. "
+        u"The Inca Atahualpa has been captured by the Spanish. "
+        u"To spare his life, the Inca offers to pay a ransom - "
+        u"Filling a large room once with gold, and twice with silver. "
+        u"\nIt's your job to go and get it.")
+
+    def __init__(self, game):
+        fg = sdl.Color((0,0,0,0xff)).cdata[0]
+        self.font = sdl.ttf.openFont(resource('fonts/kenpixel.ttf'), 8)
+        surf = sdl.ttf.renderUTF8_Blended_Wrapped(self.font,
+                                                  self.text,
+                                                  fg,
+                                                  game.size[1])
+        self.sprite = CenteredSprite(game.renderer, surf)
+
+    def show(self, renderer):
+        renderer.setRenderDrawColor(*WHITE)
+        renderer.renderClear()
+        self.sprite.show(renderer)
+        renderer.renderPresent()
+
 
 class Title(object):
     """
@@ -105,7 +146,6 @@ class Title(object):
         renderer.setRenderDrawColor(*WHITE)
         self.image.show(renderer)
         renderer.renderPresent()
-        sdl.delay(2000)
 
     def destroy(self):
         self.image.destroy()
