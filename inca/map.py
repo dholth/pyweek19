@@ -39,7 +39,7 @@ class Map(object):
 
     def render(self, renderer):
         dest_rect = sdl.Rect((0,0,16,16))
-        for y, x in itertools.product(range(self.tmx.width),
+        for x, y in itertools.product(range(self.tmx.width),
                                       range(self.tmx.height)):
             for layer in self.tmx.visible_tile_layers:
                 image = self.tmx.get_tile_image(x, y, layer)

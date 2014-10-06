@@ -34,8 +34,8 @@ class Game(object):
 
     :type renderer: sdl.Renderer
     """
-    title = u"One Room"
-    size = (420, 240)
+    window_title = u"One Room"
+    window_size = (420, 240)
 
     def __init__(self):
         pass
@@ -45,7 +45,7 @@ class Game(object):
         sdl.image.init(sdl.image.INIT_PNG)
         sdl.ttf.init()
 
-        self.window = sdl.createWindow(self.title,
+        self.window = sdl.createWindow(self.window_title,
                                        sdl.WINDOWPOS_UNDEFINED,
                                        sdl.WINDOWPOS_UNDEFINED,
                                        1280, 720,
@@ -57,12 +57,12 @@ class Game(object):
         self.window.showWindow()
 
         renderer = self.renderer
-        renderer.renderSetLogicalSize(*self.size)
+        renderer.renderSetLogicalSize(*self.window_size)
         renderer.setRenderDrawColor(*WHITE)
         renderer.renderClear()
         renderer.renderPresent()
 
-        if True:
+        if False:
             self.title = Title(self)
             self.title.show()
             sdl.delay(1000)
@@ -72,6 +72,7 @@ class Game(object):
             sdl.delay(8000)
 
         self.map = inca.map.Map(resource('levels/level_1.tmx'))
+        self.map.load_images(renderer)
         renderer.setRenderDrawColor(*BLACK)
         renderer.renderClear()
         self.map.render(renderer)
@@ -81,7 +82,6 @@ class Game(object):
         self.quit()
 
     def quit(self):
-        self.title.destroy()
         self.renderer.destroyRenderer()
         self.window.destroyWindow()
         sdl.quit()
@@ -135,7 +135,7 @@ class Story(object):
         surf = sdl.ttf.renderUTF8_Blended_Wrapped(self.font,
                                                   self.text,
                                                   fg,
-                                                  game.size[1])
+                                                  game.window_size[1])
         self.sprite = CenteredSprite(game.renderer, surf)
 
     def show(self, renderer):
