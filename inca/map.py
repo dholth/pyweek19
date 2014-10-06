@@ -13,8 +13,6 @@ import logging
 import pytmx
 from pytmx.constants import TRANS_FLIPX, TRANS_FLIPY, TRANS_ROT
 
-pytmx.load_pygame
-
 log = logging.getLogger(__name__)
 
 class Map(object):
@@ -114,6 +112,8 @@ def _load_images_sdl(tmxdata, *args, **kwargs):
         colorkey = getattr(ts, 'trans', None)
         if colorkey:
             colorkey = Color(colorkey)
+            key = sdl.mapRGB(image.format, *colorkey.rgba[:3])
+            image.setColorKey(True, key)
 
         for real_gid, (y, x) in enumerate(p, ts.firstgid):
             if x + ts.tilewidth-ts.spacing > width:
