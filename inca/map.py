@@ -18,12 +18,17 @@ log = logging.getLogger(__name__)
 class Map(object):
     def __init__(self, filename):
         self.tmx = pytmx.TiledMap(filename)
+        self.pos = [0, 0]
+
+    def look_at(self, x, y):
+        self.pos[0] = int(x)
+        self.pos[1] = int(y)
 
     def load_images(self, renderer):
         """
         :type renderer: sdl.Renderer
         """
-        sdl.image.init(sdl.image.INIT_PNG) # XXX okay to call multiple times?
+        sdl.image.init(sdl.image.INIT_PNG)  # XXX okay to call multiple times?
         _load_images_sdl(self.tmx)
         # now load as textures...
         textures = {}
@@ -36,7 +41,7 @@ class Map(object):
                 ts.texture = textures[ts.source]
 
     def render(self, renderer):
-        dest_rect = sdl.Rect((0,0,16,16))
+        dest_rect = sdl.Rect((0, 0, 16, 16))
         for x, y in itertools.product(range(self.tmx.width),
                                       range(self.tmx.height)):
             for layer in self.tmx.visible_tile_layers:
@@ -44,8 +49,8 @@ class Map(object):
                 if not image:
                     continue
                 ts, bounds, flags = image
-                dest_rect.x = x * 16
-                dest_rect.y = y * 16
+                dest_rect.x = (x * 16) - self.pos[0]
+                dest_rect.y = (y * 16) - self.pos[1]
                 rot = 90 if (flags & TRANS_ROT) else 0
                 renderer.renderCopyEx(ts.texture,
                     (bounds[0][0], bounds[0][1],
@@ -63,7 +68,7 @@ class Color(object):
         self.rgba = (r, g, b, 0xff)
 
     def __repr__(self):
-        return "Color('"+"".join(("%02x" % x) for x in self.rgba[:3])+"')"
+        return "Color('" + "".join(("%02x" % x) for x in self.rgba[:3]) + "')"
 
 def _load_images_sdl(tmxdata, *args, **kwargs):
     """  Utility function to load images.  Used internally!
@@ -121,7 +126,7 @@ def _load_images_sdl(tmxdata, *args, **kwargs):
             image.setColorKey(True, key)
 
         for real_gid, (y, x) in enumerate(p, ts.firstgid):
-            if x + ts.tilewidth-ts.spacing > width:
+            if x + ts.tilewidth - ts.spacing > width:
                 continue
 
             # map_gid returns a list of internal pytmx gids to load

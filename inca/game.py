@@ -4,6 +4,7 @@ Platformer for PyWeek 19, "One Room".
 Daniel Holth <dholth@fastmail.fm>, 2014
 """
 
+import math
 import sys
 import pkg_resources
 import textwrap
@@ -28,6 +29,74 @@ import inca.map
 WHITE = (0xff,0xff,0xff,0xff)
 BLACK = (0,0,0,0xff)
 
+class Input(object):
+    """
+    Handle input events from sdl, converting them into game commands.
+    """
+    DEAD_ZONE = 32768 // 4
+
+    def __init__(self):
+        self.gamepads = []
+        self.x_axis = 0
+        self.y_axis = 0
+        self.jump = 0
+
+    def handle(self, event):
+        """
+        Return True if event was handled by us.
+        """
+        if event.type == sdl.CONTROLLERDEVICEADDED:
+            gamepad = sdl.gameControllerOpen(event.cdevice.which)
+            gamepad.which = event.cdevice.which
+            self.gamepads.append(gamepad)
+        elif event.type == sdl.CONTROLLERDEVICEREMOVED:
+            # event.cdevice.which doesn't seem to work on OSX (increments each
+            # time even when we only have one controller). Instead, just close
+            # anything that is not attached.
+            gamepads = []
+            for gamepad in self.gamepads:
+                if not gamepad.gameControllerGetAttached():
+                    gamepad.gameControllerClose()
+                else:
+                    gamepads.append(gamepad)
+            self.gamepads = gamepads
+        return False
+
+    def frame(self):
+        """Make sense of input state."""
+        self.x_axis = 0
+        self.y_axis = 0
+        self.jump = 0
+
+        keystate, _ = sdl.getKeyboardState()
+        if keystate[sdl.SCANCODE_LEFT]:
+            self.x_axis = -1
+        elif keystate[sdl.SCANCODE_RIGHT]:
+            self.x_axis = 1
+
+        if keystate[sdl.SCANCODE_UP]:
+            self.y_axis = -1
+        elif keystate[sdl.SCANCODE_DOWN]:
+            self.y_axis = 1
+
+        if keystate[sdl.SCANCODE_LSHIFT]:
+            self.jump = 1
+
+        for gamepad in self.gamepads:
+            x_axis = gamepad.gameControllerGetAxis(sdl.CONTROLLER_AXIS_LEFTX)
+            if abs(x_axis) > self.DEAD_ZONE:
+                self.x_axis = math.copysign(1, x_axis)
+
+            y_axis = gamepad.gameControllerGetAxis(sdl.CONTROLLER_AXIS_LEFTY)
+            if abs(y_axis) > self.DEAD_ZONE:
+                self.y_axis = math.copysign(1, y_axis)
+
+            button = gamepad.gameControllerGetButton(sdl.CONTROLLER_BUTTON_A)
+            if button:
+                self.jump = 1
+
+        return dict(x_axis=self.x_axis, y_axis=self.y_axis, jump=self.jump)
+
 class Game(object):
     """
     Our game.
@@ -51,7 +120,7 @@ class Game(object):
                                        1280, 720,
                                        sdl.WINDOW_HIDDEN)
 
-        self.renderer = self.window.createRenderer(-1, 0)
+        self.renderer = self.window.createRenderer(-1, sdl.RENDERER_PRESENTVSYNC)
 
     def run(self):
         self.window.showWindow()
@@ -73,23 +142,41 @@ class Game(object):
 
         self.map = inca.map.Map(resource('levels/level_1.tmx'))
         self.map.load_images(renderer)
-        renderer.setRenderDrawColor(*BLACK)
-
-        renderer.renderClear()
-        self.map.render(renderer)
-        renderer.renderPresent()
 
         event = sdl.Event()
         running = True
+
+        input_handler = Input()
+
+        last_input = {}
+
+        look_x = 0
+        look_y = 0
+
         while running:
-            while event.waitEvent():
-                if event.type == sdl.QUIT:
+            while event.pollEvent():
+                if input_handler.handle(event):
+                    continue
+                elif event.type == sdl.QUIT:
                     running = False
                     break
                 elif event.type == sdl.KEYDOWN:
                     if event.key.keysym.sym == sdl.K_ESCAPE:
                         running = False
                         break
+            current_input = input_handler.frame()
+            if current_input != last_input:
+                print current_input
+                last_input = current_input
+            look_x += current_input['x_axis']
+            look_y += current_input['y_axis']
+
+            self.map.look_at(look_x, look_y)
+
+            renderer.setRenderDrawColor(*BLACK)
+            renderer.renderClear()
+            self.map.render(renderer)
+            renderer.renderPresent()
 
         self.quit()
 
