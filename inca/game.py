@@ -8,8 +8,11 @@ import math
 import sys
 import pkg_resources
 import textwrap
+import logging
 
 import sdl
+
+log = logging.getLogger(__name__)
 
 def resource(name):
     """
@@ -47,23 +50,21 @@ class Input(object):
         """
         if event.type == sdl.CONTROLLERDEVICEADDED:
             gamepad = sdl.gameControllerOpen(event.cdevice.which)
-            gamepad.which = event.cdevice.which
             self.gamepads.append(gamepad)
+            return True
         elif event.type == sdl.CONTROLLERDEVICEREMOVED:
-            # event.cdevice.which doesn't seem to work on OSX (increments each
-            # time even when we only have one controller). Instead, just close
-            # anything that is not attached.
-            gamepads = []
-            for gamepad in self.gamepads:
-                if not gamepad.gameControllerGetAttached():
-                    gamepad.gameControllerClose()
-                else:
-                    gamepads.append(gamepad)
+            which = event.cdevice.which
+            gamepads = [gamepad for gamepad in self.gamepads
+                if sdl.joystickInstanceID(sdl.gameControllerGetJoystick(gamepad)) == which]
             self.gamepads = gamepads
+            log.debug("%r", self.gamepads)
+            return True
         return False
 
     def frame(self):
-        """Make sense of input state."""
+        """
+        Make sense of input state.
+        """
         self.x_axis = 0
         self.y_axis = 0
         self.jump = 0
