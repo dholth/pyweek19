@@ -19,6 +19,7 @@ class Map(object):
     def __init__(self, filename):
         self.tmx = pytmx.TiledMap(filename)
         self.pos = [0, 0]
+        self.tile_size = [16, 16]
 
     def look_at(self, x, y):
         self.pos[0] = int(x)
@@ -41,9 +42,20 @@ class Map(object):
                 ts.texture = textures[ts.source]
 
     def render(self, renderer):
+        viewport = sdl.Rect()
+        renderer.renderGetViewport(viewport)
+        
+        # Only render those tiles inside our viewport with a little overlap
+        ranges = []
+        for (pos, tile_size, dimension, ceiling) in \
+            ((self.pos[0], self.tile_size[0], viewport.w, self.tmx.width),
+             (self.pos[1], self.tile_size[1], viewport.h, self.tmx.height)):
+            start = max(0, pos // tile_size)
+            end = min(start + dimension // tile_size + 2, ceiling)
+            ranges.append(xrange(start, end))
+        
         dest_rect = sdl.Rect((0, 0, 16, 16))
-        for x, y in itertools.product(range(self.tmx.width),
-                                      range(self.tmx.height)):
+        for x, y in itertools.product(*ranges):
             for layer in self.tmx.visible_tile_layers:
                 image = self.tmx.get_tile_image(x, y, layer)
                 if not image:
