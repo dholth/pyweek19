@@ -46,10 +46,15 @@ class Map(object):
                 ts, bounds, flags = image
                 dest_rect.x = x * 16
                 dest_rect.y = y * 16
-                renderer.renderCopy(ts.texture,
-                                    (bounds[0][0], bounds[0][1],
-                                     bounds[1][0], bounds[1][1]),
-                                    dest_rect)
+                rot = 90 if (flags & TRANS_ROT) else 0
+                renderer.renderCopyEx(ts.texture,
+                    (bounds[0][0], bounds[0][1],
+                     bounds[1][0], bounds[1][1]),
+                     dest_rect,
+                     rot,
+                     None,
+                     (flags & (TRANS_FLIPX ^ (rot and TRANS_FLIPX)) and sdl.FLIP_HORIZONTAL) |
+                     (flags & (TRANS_FLIPY) and sdl.FLIP_VERTICAL))
 
 class Color(object):
     """Color from hex specification."""

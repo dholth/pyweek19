@@ -74,10 +74,22 @@ class Game(object):
         self.map = inca.map.Map(resource('levels/level_1.tmx'))
         self.map.load_images(renderer)
         renderer.setRenderDrawColor(*BLACK)
+
         renderer.renderClear()
         self.map.render(renderer)
         renderer.renderPresent()
-        sdl.delay(3000)
+
+        event = sdl.Event()
+        running = True
+        while running:
+            while event.waitEvent():
+                if event.type == sdl.QUIT:
+                    running = False
+                    break
+                elif event.type == sdl.KEYDOWN:
+                    if event.key.keysym.sym == sdl.K_ESCAPE:
+                        running = False
+                        break
 
         self.quit()
 
