@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="32" height="16" tilewidth="16" tileheight="16">
- <tileset firstgid="1" name="simples_pimples" tilewidth="16" tileheight="16">
-  <image source="simples_pimples.png" trans="5a5268" width="800" height="1280"/>
- </tileset>
+<map version="1.0" orientation="orthogonal" width="32" height="16" tilewidth="16" tileheight="16">
+ <tileset firstgid="1" source="simples_pimples.tsx"/>
  <layer name="Scenery" width="32" height="16">
   <data encoding="base64" compression="zlib">
    eJxjYBh8IJETP5+W4C4jwwL62TbwoIidgaGYfeDsXwK0eykW+w2xxDkwbmB0A00dNQxBEh3zEDYwZYTaP5kTgo9xItijYBQMFgAA3e4L9w==
@@ -18,7 +16,8 @@
    eJxjYBgFo2BwgntsYLwAiA8AccJAu4cS4MI10C4YBaNgFIwCVAAA64EFnw==
   </data>
  </layer>
- <objectgroup name="Object Layer 1">
+ <objectgroup name="Object Layer 1" width="0" height="0">
   <object name="Hero" type="Hero" gid="77" x="32" y="96"/>
+  <object gid="83" x="80" y="80"/>
  </objectgroup>
 </map>

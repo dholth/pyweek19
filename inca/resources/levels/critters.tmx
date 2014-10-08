@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="18" height="64" tilewidth="16" tileheight="16">
+ <tileset firstgid="1" source="simples_pimples.tsx"/>
+ <layer name="Tile Layer 1" width="18" height="64">
+  <data encoding="base64" compression="zlib">
+   eJzt00VWlnEYxuEXNmCCIGnuww66MTdhEtIS9iZMULoUcx82GCCYC/By4DlOv0cHDr7nnGt4/wbv+b95SZLkU0AhRRQnqV8Z5VRQSRXVgU47HXTSRTc9gc4oY4wzwSRTgc5b5lngHe/5EOhkZSRJNhvIIZeNGal39tns5wAHKaE00GmyaaaFVs7RFugM2gxxl3sMMxLoPLd5wUte8Zo3gc6qzCRZzRrWso71mal3dtjsZBe72cPeQOeEzUlOcZoznA10rtvc4Ca3uM2dQKeGWuqop4HG1DPJeXrpo58BLgQ608wwy30eMBfofGSRJT6xzEqgk+fN5VNAIUUUB95hmU05FVRSRXWg027TQSdddNMT6IzajDHOBJNMBTpvbeZZ4B3v+RDoZHm72Wwgh1w2Bt7zPpv9HOAgJZQGOk02zbTQyjnaAp1BmyHuco9hRgKdP7/Pr/sX3+fX/e33+fP+5vv8vuj3OcRhjnCUYxxPPZNc5BKXucJVrgU6D3nEY57wlGeBzme+8JVvfOdHoLPJP7mZLWxlG9sD/2mNTS111NNAY6Bz3qaXPvoZ4EKgM20zwyz3ecBcoPPRZpElPrHMSqCT5+3mU0AhRRQH3nOZTTkVVFJFdaDTbtNBJ1100xPojNqMMc4Ek0wFOulLX/rSl77/834CL4J+KA==
+  </data>
+ </layer>
+</map>
