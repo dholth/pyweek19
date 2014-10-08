@@ -72,6 +72,16 @@ class Map(object):
                      None,
                      (flags & (TRANS_FLIPX ^ (rot and TRANS_FLIPX)) and sdl.FLIP_HORIZONTAL) |
                      (flags & (TRANS_FLIPY) and sdl.FLIP_VERTICAL))
+                
+        for ob in self.tmx.objects:
+            ts, bounds, flags = self.tmx.get_tile_image_by_gid(ob.gid)
+            renderer.renderCopyEx(ts.texture,
+                    (bounds[0][0], bounds[0][1],
+                     bounds[1][0], bounds[1][1]),
+                     (16,16,16,16),
+                     0,
+                     None,
+                     0)
 
 class Color(object):
     """Color from hex specification."""
