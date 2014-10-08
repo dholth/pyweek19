@@ -27,6 +27,7 @@ class Psych(object):
 sys.modules['pygame'] = 'not needed'
 sys.modules['pygame.transform'] = Psych
 
+import pytmx
 import inca.map
 
 WHITE = (0xff,0xff,0xff,0xff)
@@ -97,7 +98,43 @@ class Input(object):
                 self.jump = 1
 
         return dict(x_axis=self.x_axis, y_axis=self.y_axis, jump=self.jump)
-
+    
+class Physics(object):
+    """
+    Animate all sprites based on physics.
+    """
+    GRAVITY = 10
+    VY_MAX = 6
+    
+    def __init__(self, game):
+        self.game = game
+        
+    def tick(self, dt):            
+        collideable = self.game.map.tmx.get_layer_by_name('Solid')
+        for actor in self.game.actors:
+            if getattr(actor, 'mass', 0):
+                actor.vy = min(actor.vy + self.GRAVITY * dt, self.VY_MAX)
+            self.collide_world(actor, collideable)
+            actor.y += actor.vy
+            actor.x += actor.vx
+            
+    def collide_world(self, actor, layer):
+        tile_size = (layer.parent.tilewidth, layer.parent.tileheight)
+        center = ((actor.x + tile_size[0] / 2), 
+                  (actor.y + tile_size[1] / 2))
+        on_tile = (int(center[0] // tile_size[0]), 
+                   int(center[1] // tile_size[1]))
+        # Kill if outside map
+        if not ((0 <= on_tile[0] < layer.width) and
+            (0 <= on_tile[1] < layer.height)):
+            actor.vx = 0
+            actor.vy = 0
+            actor.mass = 0
+            return
+        if layer.data[on_tile[1]][on_tile[0]]:
+            actor.vx = 0
+            actor.vy = 0
+    
 class Game(object):
     """
     Our game.
@@ -108,7 +145,7 @@ class Game(object):
     window_size = (420, 240)
 
     def __init__(self):
-        pass
+        self.actors = []
 
     def init(self):
         sdl.init(sdl.INIT_EVERYTHING)
@@ -141,8 +178,20 @@ class Game(object):
             self.story.show(renderer)
             sdl.delay(8000)
 
+        self.critters = pytmx.TiledMap(resource('levels/critters.tmx'))
         self.map = inca.map.Map(resource('levels/level_1.tmx'))
         self.map.load_images(renderer)
+                
+        def load_actors():
+            for ob in self.map.tmx.objects:                
+                ob.mass = 1
+                ob.vx = 0
+                ob.vy = 0
+                self.actors.append(ob)
+
+        load_actors()
+
+        self.physics = Physics(self)
 
         event = sdl.Event()
         running = True
@@ -153,7 +202,11 @@ class Game(object):
 
         look_x = 0
         look_y = 0
+        object
+        def getSeconds():
+            return sdl.getTicks() / 1000.
 
+        last_frame = getSeconds()
         while running:
             while event.pollEvent():
                 if input_handler.handle(event):
@@ -165,10 +218,17 @@ class Game(object):
                     if event.key.keysym.sym == sdl.K_ESCAPE:
                         running = False
                         break
+                    
+            frame = getSeconds()
+            dt = frame - last_frame
+            last_frame = frame
+            
+            self.physics.tick(dt)
+
             current_input = input_handler.frame()
             if current_input != last_input:
-                print current_input
                 last_input = current_input
+
             look_x += current_input['x_axis']
             look_y += current_input['y_axis']
 
