@@ -18,7 +18,7 @@ def resource(name):
     """
     Return a resource_filename from within our package.
     """
-    return pkg_resources.resource_filename('inca', 'resources/'+name)
+    return pkg_resources.resource_filename('inca', 'resources/' + name)
 
 # Trick PyTMX into not requiring pygame
 class Psych(object):
@@ -30,8 +30,8 @@ sys.modules['pygame.transform'] = Psych
 import pytmx
 import inca.map
 
-WHITE = (0xff,0xff,0xff,0xff)
-BLACK = (0,0,0,0xff)
+WHITE = (0xff, 0xff, 0xff, 0xff)
+BLACK = (0, 0, 0, 0xff)
 
 class Input(object):
     """
@@ -102,9 +102,12 @@ class Input(object):
 GRAVITY = 20
 VY_MAX = 60
 VX_MAX = 60
-ACCEL = 20
-DRAG = 0.1
-    
+ACCEL = 120
+DRAG = 1.0
+V_JUMP = -60
+
+debug_points = []
+
 class Physics(object):
     """
     Animate all sprites based on physics.
@@ -128,20 +131,44 @@ class Physics(object):
             
     def collide_world(self, actor, layer, dt):
         tile_size = (layer.parent.tilewidth, layer.parent.tileheight)
-        center = ((actor.x + tile_size[0] / 2), 
+        center = ((actor.x + tile_size[0] / 2),
                   (actor.y + tile_size[1] / 2))
-        on_tile = (int(center[0] // tile_size[0]), 
-                   int(center[1] // tile_size[1]))
-        # Kill if outside map
-        if not ((0 <= on_tile[0] < layer.width) and
-            (0 <= on_tile[1] < layer.height)):
-            actor.vx = 0
-            actor.vy = 0
-            actor.mass = 0
-            return
-        if layer.data[on_tile[1]][on_tile[0]]:
+        
+        # check to see if points near the corners of the actor
+        # have collided with the world:
+        test_points = [(center[0] - tile_size[0] // 4, actor.y + tile_size[1]),
+                       (center[0] + tile_size[0] // 4, actor.y + tile_size[1]),
+                       (center[0] - tile_size[0] // 4, actor.y + tile_size[1] - 6),
+                       (center[0] + tile_size[0] // 4, actor.y + tile_size[1] - 6)]
+        debug_points.extend(test_points)
+
+        on_tiles = [(int(point[0] // tile_size[0]), 
+                       int(point[1] // tile_size[1])) for point in test_points]
+
+        for on_tile in on_tiles:                           
+            # Kill if outside map...
+            if not ((0 <= on_tile[0] < layer.width) and
+                (0 <= on_tile[1] < layer.height)):
+                actor.vx = 0
+                actor.vy = 0
+                actor.mass = 0
+                return
+        
+        sensors = [layer.data[on_tile[1]][on_tile[0]] for on_tile in on_tiles]
+        
+        if (sensors[0] and not sensors[2]) or (sensors[1] and not sensors[3]):
             actor.vx = actor.vx - (actor.vx * DRAG * dt)
             actor.vy = 0
+            # may need to interleave move x, collide horizontal, 
+            # move y, collide vertical operations in a specific
+            # order for best behavior 
+            actor.y = on_tile[1] * tile_size[1]
+        
+        if any(sensors):
+            if actor.jump:
+                actor.vy = V_JUMP
+            else:
+                actor.vy = 0
 
 class Game(object):
     """
@@ -195,6 +222,7 @@ class Game(object):
                 ob.mass = 1
                 ob.vx = 0
                 ob.vy = 0
+                ob.jump = 0
                 self.actors.append(ob)
 
         load_actors()
@@ -244,12 +272,20 @@ class Game(object):
 
             hero.vx += current_input['x_axis'] * ACCEL * dt
             hero.y += current_input['y_axis']
+            hero.jump = current_input['jump']
 
             self.map.look_at(int(hero.x), int(hero.y))
 
             renderer.setRenderDrawColor(*BLACK)
             renderer.renderClear()
             self.map.render(renderer)
+            
+            renderer.setRenderDrawColor(*WHITE)
+            while debug_points:
+                point = debug_points.pop()
+                renderer.renderDrawPoint(int(point[0] - self.map.pos[0]),
+                                         int(point[1] - self.map.pos[1]))
+
             renderer.renderPresent()
 
         self.quit()
@@ -303,7 +339,7 @@ class Story(object):
         u"\nIt's your job to go and get it.")
 
     def __init__(self, game):
-        fg = sdl.Color((0,0,0,0xff)).cdata[0]
+        fg = sdl.Color((0, 0, 0, 0xff)).cdata[0]
         self.font = sdl.ttf.openFont(resource('fonts/kenpixel.ttf'), 8)
         surf = sdl.ttf.renderUTF8_Blended_Wrapped(self.font,
                                                   self.text,
