@@ -98,27 +98,35 @@ class Input(object):
                 self.jump = 1
 
         return dict(x_axis=self.x_axis, y_axis=self.y_axis, jump=self.jump)
+
+GRAVITY = 20
+VY_MAX = 60
+VX_MAX = 60
+ACCEL = 20
+DRAG = 0.1
     
 class Physics(object):
     """
     Animate all sprites based on physics.
     """
-    GRAVITY = 10
-    VY_MAX = 6
-    
+    GRAVITY = GRAVITY
+    VX_MAX = VX_MAX
+    VY_MAX = VY_MAX
+
     def __init__(self, game):
         self.game = game
         
     def tick(self, dt):            
         collideable = self.game.map.tmx.get_layer_by_name('Solid')
         for actor in self.game.actors:
+            actor.vx = min(actor.vx, self.VX_MAX)
             if getattr(actor, 'mass', 0):
                 actor.vy = min(actor.vy + self.GRAVITY * dt, self.VY_MAX)
-            self.collide_world(actor, collideable)
-            actor.y += actor.vy
-            actor.x += actor.vx
+            self.collide_world(actor, collideable, dt)
+            actor.y += actor.vy * dt
+            actor.x += actor.vx * dt
             
-    def collide_world(self, actor, layer):
+    def collide_world(self, actor, layer, dt):
         tile_size = (layer.parent.tilewidth, layer.parent.tileheight)
         center = ((actor.x + tile_size[0] / 2), 
                   (actor.y + tile_size[1] / 2))
@@ -132,9 +140,9 @@ class Physics(object):
             actor.mass = 0
             return
         if layer.data[on_tile[1]][on_tile[0]]:
-            actor.vx = 0
+            actor.vx = actor.vx - (actor.vx * DRAG * dt)
             actor.vy = 0
-    
+
 class Game(object):
     """
     Our game.
@@ -181,15 +189,20 @@ class Game(object):
         self.critters = pytmx.TiledMap(resource('levels/critters.tmx'))
         self.map = inca.map.Map(resource('levels/level_1.tmx'))
         self.map.load_images(renderer)
-                
+        
         def load_actors():
-            for ob in self.map.tmx.objects:                
+            for ob in self.map.tmx.objects:          
                 ob.mass = 1
                 ob.vx = 0
                 ob.vy = 0
                 self.actors.append(ob)
 
         load_actors()
+        
+        hero = None
+        for actor in self.actors:
+            if actor.name and 'Hero' in actor.name:
+                hero = actor
 
         self.physics = Physics(self)
 
@@ -229,10 +242,10 @@ class Game(object):
             if current_input != last_input:
                 last_input = current_input
 
-            look_x += current_input['x_axis']
-            look_y += current_input['y_axis']
+            hero.vx += current_input['x_axis'] * ACCEL * dt
+            hero.y += current_input['y_axis']
 
-            self.map.look_at(look_x, look_y)
+            self.map.look_at(int(hero.x), int(hero.y))
 
             renderer.setRenderDrawColor(*BLACK)
             renderer.renderClear()

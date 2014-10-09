@@ -15,15 +15,51 @@ from pytmx.constants import TRANS_FLIPX, TRANS_FLIPY, TRANS_ROT
 
 log = logging.getLogger(__name__)
 
+def clamp(coord, lower, upper):
+    """
+    Clamp coord to lay between lower and upper.
+    """
+    return min(upper, max(coord, lower))
+
 class Map(object):
-    def __init__(self, filename):
+    def __init__(self, filename, screen_size=(420,240)):
         self.tmx = pytmx.TiledMap(filename)
         self.pos = [0, 0]
         self.tile_size = [16, 16]
-
+        self.screen_size = screen_size
+        
+    @property
+    def width_px(self):
+        return self.tmx.width * self.tile_size[0]
+    
+    @property
+    def height_px(self):
+        return self.tmx.height * self.tile_size[1]
+    
     def look_at(self, x, y):
-        self.pos[0] = int(x)
-        self.pos[1] = int(y)
+        """
+        Camera logic.
+        1. Camera does not like to move. The character should stay within an
+           imaginary box centered on the screen.
+        2. Camera does not like to show outside the map.
+        TODO: Take into account direction of travel.
+        """        
+        slack = 30
+        
+        newpos = self.pos[:]
+        
+        centered = [x - self.screen_size[0] / 2,
+                    y - self.screen_size[1] / 2]
+
+        if centered[0] > newpos[0] + slack:
+            newpos[0] = centered[0] - slack
+        elif centered[0] < newpos[0] - slack:
+            newpos[0] = centered[0] + slack
+
+        newpos[0] = clamp(newpos[0], 0, max(0, self.width_px - self.screen_size[0]))
+        newpos[1] = clamp(newpos[1], 0, self.height_px - self.screen_size[1])
+                
+        self.pos = newpos
 
     def load_images(self, renderer):
         """
