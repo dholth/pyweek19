@@ -9,10 +9,13 @@ import sys
 import pkg_resources
 import textwrap
 import logging
-
 import sdl
 
+from .util import clamp
+
 log = logging.getLogger(__name__)
+
+SHOW_INTRO = False
 
 def resource(name):
     """
@@ -44,6 +47,7 @@ class Input(object):
         self.x_axis = 0
         self.y_axis = 0
         self.jump = 0
+        self.action = 0
 
     def handle(self, event):
         """
@@ -69,6 +73,7 @@ class Input(object):
         self.x_axis = 0
         self.y_axis = 0
         self.jump = 0
+        self.action = 0
 
         keystate, _ = sdl.getKeyboardState()
         if keystate[sdl.SCANCODE_LEFT]:
@@ -83,6 +88,9 @@ class Input(object):
 
         if keystate[sdl.SCANCODE_LSHIFT]:
             self.jump = 1
+    
+        if keystate[sdl.SCANCODE_SPACE]:
+            self.action = 1
 
         for gamepad in self.gamepads:
             x_axis = gamepad.gameControllerGetAxis(sdl.CONTROLLER_AXIS_LEFTX)
@@ -96,8 +104,10 @@ class Input(object):
             button = gamepad.gameControllerGetButton(sdl.CONTROLLER_BUTTON_A)
             if button:
                 self.jump = 1
-
-        return dict(x_axis=self.x_axis, y_axis=self.y_axis, jump=self.jump)
+                
+            button = gamepad.gameControllerGetButton(sdl.CONTROLLER_BUTTON_B)
+            if button:
+                self.action = 1
 
 GRAVITY = 8 * 9.8
 VY_MAX = 60
@@ -120,16 +130,23 @@ class Physics(object):
         self.game = game
         
     def tick(self, dt):
-        collideable = self.game.map.tmx.get_layer_by_name('Solid')
+        tmx = self.game.map.tmx
+        coord_min = (0, 0)
+        coord_max = (tmx.width * (tmx.tilewidth - 1),
+                     tmx.height * (tmx.tileheight - 1))
+        collideable = tmx.get_layer_by_name('Solid')
+        treasure = tmx.get_layer_by_name('Treasure')
         for actor in self.game.actors:
             actor.vx = min(actor.vx, self.VX_MAX)
             if getattr(actor, 'mass', 0):
                 actor.vy = min(actor.vy + self.GRAVITY * dt, self.VY_MAX)
             actor.y += actor.vy * dt
             actor.x += actor.vx * dt
-            self.collide_world(actor, collideable, dt)
+            actor.x = clamp(actor.x, coord_min[0], coord_max[0])
+            actor.y = clamp(actor.y, coord_min[1], coord_max[1])
+            self.collide_world(actor, collideable, treasure, dt)
             
-    def collide_world(self, actor, layer, dt):
+    def collide_world(self, actor, layer, treasure, dt):
         tile_size = (layer.parent.tilewidth, layer.parent.tileheight)
         center = ((int(actor.x) + tile_size[0] / 2),
                   (int(actor.y) + tile_size[1] / 2))
@@ -143,7 +160,7 @@ class Physics(object):
         # debug_points.extend(test_points)
 
         on_tiles = [(int(point[0] // tile_size[0]), 
-                       int(point[1] // tile_size[1])) for point in test_points]
+                     int(point[1] // tile_size[1])) for point in test_points]
 
         for on_tile in on_tiles:                           
             # Kill if outside map...
@@ -180,7 +197,19 @@ class Physics(object):
         on_tiles = [(int(point[0]) // tile_size[0], 
                      int(point[1]) // tile_size[1]) for point in test_points]
         
+        # wonky
+        for gid in [treasure.data[on_tile[1]][on_tile[0]] for on_tile in set(on_tiles)]:
+            if gid:
+                treasure.data[on_tile[1]][on_tile[0]] = 0
+        
         sensors = [layer.data[on_tile[1]][on_tile[0]] for on_tile in on_tiles]
+        
+        for i, gid in enumerate(sensors):
+            if gid:
+                if actor.action:
+                    props = layer.parent.get_tile_properties_by_gid(gid)
+                    if props and props.get('name', '') == 'Door':
+                        layer.data[on_tiles[i][1]][on_tiles[i][0]] = 0
         
         for test, point in zip(sensors, test_points):
             if test:
@@ -230,7 +259,7 @@ class Game(object):
         renderer.renderClear()
         renderer.renderPresent()
 
-        if False:
+        if SHOW_INTRO:
             self.title = Title(self)
             self.title.show()
             sdl.delay(1000)
@@ -249,6 +278,7 @@ class Game(object):
                 ob.vx = 0
                 ob.vy = 0
                 ob.jump = 0
+                ob.action = 0
                 self.actors.append(ob)
 
         load_actors()
@@ -265,11 +295,6 @@ class Game(object):
 
         input_handler = Input()
 
-        last_input = {}
-
-        look_x = 0
-        look_y = 0
-        object
         def getSeconds():
             return sdl.getTicks() / 1000.
 
@@ -292,13 +317,12 @@ class Game(object):
             
             self.physics.tick(dt)
 
-            current_input = input_handler.frame()
-            if current_input != last_input:
-                last_input = current_input
-
-            hero.vx += current_input['x_axis'] * ACCEL * dt
-            hero.y += current_input['y_axis']
-            hero.jump = current_input['jump']
+            input_handler.frame()
+            
+            hero.vx += input_handler.x_axis * ACCEL * dt
+            # hero.y += current_input.y_axis.
+            hero.jump = input_handler.jump
+            hero.action = input_handler.action
 
             self.map.look_at(int(hero.x), int(hero.y))
 
@@ -307,6 +331,8 @@ class Game(object):
             self.map.render(renderer)
             
             renderer.setRenderDrawColor(*WHITE)
+            
+            debug_points[:] = []
             while debug_points:
                 point = debug_points.pop()
                 renderer.renderDrawPoint(int(point[0] - self.map.pos[0]),

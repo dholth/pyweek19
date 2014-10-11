@@ -10,16 +10,12 @@ import sdl
 import itertools
 import logging
 
+from .util import clamp
+
 import pytmx
 from pytmx.constants import TRANS_FLIPX, TRANS_FLIPY, TRANS_ROT
 
 log = logging.getLogger(__name__)
-
-def clamp(coord, lower, upper):
-    """
-    Clamp coord to lay between lower and upper.
-    """
-    return min(upper, max(coord, lower))
 
 class Map(object):
     def __init__(self, filename, screen_size=(420,240)):
