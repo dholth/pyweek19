@@ -8,7 +8,7 @@
  </layer>
  <layer name="Solid" width="32" height="16">
   <data encoding="base64" compression="zlib">
-   eJxjYEAAXUYGhkQ6YwY0+ykBA20/OW6gtf2kyFPDfmQ7iHHjdTYE/kYl+4l1HwjromFapm9s9tMzf43aP/LsH8WjGB8GAEuWjv0=
+   eJxjYEAAXUYGhkQ6YwY0+ykBA20/OW6gtf2kyFPDfmQ7iHHjdTYIBoFvVLKfWPeBsC4apmX6xmY/PfPXqP0jz/5RPIrxYQCSuY4g
   </data>
  </layer>
  <layer name="Treasure" width="32" height="16">
@@ -19,5 +19,15 @@
  <objectgroup name="Object Layer 1" width="0" height="0">
   <object name="Hero" type="Hero" gid="77" x="32" y="96"/>
   <object gid="83" x="80" y="80"/>
+  <object gid="652" x="128" y="48"/>
+  <object gid="652" x="144" y="64"/>
+  <object gid="652" x="160" y="48"/>
+  <object gid="652" x="176" y="64"/>
+  <object gid="652" x="192" y="48"/>
+  <object gid="654" x="224" y="32"/>
+  <object gid="654" x="240" y="48"/>
+  <object gid="654" x="256" y="64"/>
+  <object gid="654" x="288" y="96"/>
+  <object gid="654" x="272" y="80"/>
  </objectgroup>
 </map>

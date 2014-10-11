@@ -99,11 +99,11 @@ class Input(object):
 
         return dict(x_axis=self.x_axis, y_axis=self.y_axis, jump=self.jump)
 
-GRAVITY = 20
+GRAVITY = 8 * 9.8
 VY_MAX = 60
 VX_MAX = 60
 ACCEL = 120
-DRAG = 1.0
+DRAG = 2.0
 V_JUMP = -60
 
 debug_points = []
@@ -119,20 +119,20 @@ class Physics(object):
     def __init__(self, game):
         self.game = game
         
-    def tick(self, dt):            
+    def tick(self, dt):
         collideable = self.game.map.tmx.get_layer_by_name('Solid')
         for actor in self.game.actors:
             actor.vx = min(actor.vx, self.VX_MAX)
             if getattr(actor, 'mass', 0):
                 actor.vy = min(actor.vy + self.GRAVITY * dt, self.VY_MAX)
-            self.collide_world(actor, collideable, dt)
             actor.y += actor.vy * dt
             actor.x += actor.vx * dt
+            self.collide_world(actor, collideable, dt)
             
     def collide_world(self, actor, layer, dt):
         tile_size = (layer.parent.tilewidth, layer.parent.tileheight)
-        center = ((actor.x + tile_size[0] / 2),
-                  (actor.y + tile_size[1] / 2))
+        center = ((int(actor.x) + tile_size[0] / 2),
+                  (int(actor.y) + tile_size[1] / 2))
         
         # check to see if points near the corners of the actor
         # have collided with the world:
@@ -140,7 +140,7 @@ class Physics(object):
                        (center[0] + tile_size[0] // 4, actor.y + tile_size[1]),
                        (center[0] - tile_size[0] // 4, actor.y + tile_size[1] - 6),
                        (center[0] + tile_size[0] // 4, actor.y + tile_size[1] - 6)]
-        debug_points.extend(test_points)
+        # debug_points.extend(test_points)
 
         on_tiles = [(int(point[0] // tile_size[0]), 
                        int(point[1] // tile_size[1])) for point in test_points]
@@ -169,6 +169,32 @@ class Physics(object):
                 actor.vy = V_JUMP
             else:
                 actor.vy = 0
+                
+        # horizontal collision; offsets are specific for the character sprites
+        # since they are narrower than the full 16px width.
+        test_points = [
+               (center[0] - 5, actor.y + tile_size[1] - 4),
+               (center[0] + 5, actor.y + tile_size[1] - 4)]
+        debug_points.extend(test_points)
+        
+        on_tiles = [(int(point[0]) // tile_size[0], 
+                     int(point[1]) // tile_size[1]) for point in test_points]
+        
+        sensors = [layer.data[on_tile[1]][on_tile[0]] for on_tile in on_tiles]
+        
+        for test, point in zip(sensors, test_points):
+            if test:
+                debug_points.append(point)
+        
+        if sensors[0]:
+            debug_points.append(((on_tiles[1][0]) * tile_size[0] - 3, actor.y))
+            actor.x = int(debug_points[-1][0])
+            actor.vx = 0
+            
+        if sensors[1]:
+            debug_points.append(((on_tiles[1][0] - 1) * tile_size[0] + 3, actor.y))
+            actor.x = int(debug_points[-1][0])
+            actor.vx = 0
 
 class Game(object):
     """
