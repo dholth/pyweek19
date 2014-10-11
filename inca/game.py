@@ -15,7 +15,7 @@ from .util import clamp
 
 log = logging.getLogger(__name__)
 
-SHOW_INTRO = False
+SHOW_INTRO = True
 
 def resource(name):
     """
